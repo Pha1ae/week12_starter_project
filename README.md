@@ -1,25 +1,144 @@
-# OSS Week 12 — React Hooks Playground (Student Starter)
+# Project Information
 
-## 실행 방법
-Node.js 20.19+ 또는 22.12+ 권장. 프로젝트 폴더에서 실행:
+GitHub Link: https://github.com/Pha1ae/week12_starter_project
+
+Framework: React + Vite
+
+Introduction: This project introduces the usage of `useEffect` and `useRef` through four labs: an automatic timer, timer controls, input focus control, and timer management using Ref.
+
+# Installation
+
+Node.js 20.19+ or 22.12+ is recommended. Run the following commands in the project directory:
 
 ```bash
 npm install
 npm run dev
 ```
 
-브라우저에 터미널의 Local URL을 열고 LAB 탭을 이동하세요. 제출 전 `npm run build`도 실행하세요.
+Open the Local URL shown in the terminal and switch between the LAB tabs. Run `npm run build` before submission.
 
-## 수행 방법
-1. `src/components/` 아래의 LAB 1~4 파일에 있는 `TODO`를 직접 완성합니다.
-2. `src/App.jsx`, `src/App.css`는 공통 화면이므로 가급적 수정하지 않습니다.
-3. 각 LAB의 동작 화면과 콘솔 결과를 기록합니다.
-4. 한 LAB에서 다른 LAB으로 탭을 전환하면 기존 컴포넌트가 언마운트됩니다. Cleanup 결과를 관찰합니다.
+# Source Code Analysis
 
+## What is the role of App.jsx, and what are the key LAB components?
 
-## 이해도 확인 질문
-1. `setCount(prev => prev + 1)`은 왜 유용한가?
-2. `useEffect(fn, [])`과 `useEffect(fn)`은 어떻게 다른가?
-3. Cleanup은 언제 실행되는가? 개발 환경 StrictMode 영향은?
-4. `useState`와 `useRef`의 값 변경 시 렌더링 차이는?
-5. LAB 2와 LAB 4에서 Timer를 관리하는 방식의 차이는?
+`App.jsx` uses `useState` to store the currently selected LAB and renders the corresponding component based on the value of `active`. When switching between LABs, the previous component is unmounted, triggering its Cleanup.
+
+- LAB 1 uses `useEffect` to create an automatic timer.
+- LAB 2 uses `useState` and `useEffect` to implement Start, Stop, and Reset controls.
+- LAB 3 uses `useRef` to access a DOM element and implement input focus and clearing.
+- LAB 4 uses `useRef` to store the Timer ID and control the timer through event handlers.
+
+## How do Effect, Dependency Array, and Cleanup work?
+
+An Effect is used to handle side effects, such as timers and event listeners. The Dependency Array controls when the Effect runs again. Cleanup removes resources created by the previous Effect when the component unmounts or before the Effect runs again due to dependency changes.
+
+## What is the difference between the `.current` property and `useState`?
+
+Updating a value managed by `useState` usually triggers a re-render, making it suitable for managing data displayed in the UI.
+
+Modifying `useRef.current` does not trigger a re-render, making it suitable for storing Timer IDs, DOM references, and similar values.
+
+## Key Code Analysis
+
+### Key `useEffect` Code (LAB 2)
+
+```js
+useEffect(() => {
+  if (!running) return;
+
+  const timer = setInterval(() => {
+    setCount(prev => prev + 1);
+  }, 1000);
+
+  return () => {
+    clearInterval(timer);
+  };
+}, [running]);
+```
+
+When `running` is `true`, `useEffect` creates a timer that increases `count` by 1 every second. When `running` changes to `false`, Cleanup clears the existing timer.
+
+The Dependency Array `[running]` ensures that the Effect runs according to changes in the running state.
+
+### Key `useRef` Code (LAB 4)
+
+```js
+const timerRef = useRef(null);
+
+const start = () => {
+  if (timerRef.current !== null) return;
+
+  timerRef.current = setInterval(() => {
+    setCount(prev => prev + 1);
+  }, 1000);
+
+  setRunning(true);
+};
+```
+
+`useRef` stores the Timer ID in `timerRef.current`. Before starting the timer, the function checks whether a timer already exists to prevent duplicate intervals.
+
+The timer updates `count` every second, while changes to the Timer ID do not trigger a re-render.
+
+When stopping the timer, `clearInterval(timerRef.current)` is used to clear the interval.
+
+## Comparison of the Four LABs
+
+### Why does useEffect need a Dependency Array?
+
+The Dependency Array helps prevent unnecessary repeated execution.
+
+For example, LAB 2 uses `[running]`, so the timer is created or cleared only when the running state changes, instead of being recreated every time `count` updates.
+
+### What problems can occur without Cleanup?
+
+Without Cleanup, problems such as duplicate timers, unnecessary memory and resource usage, repeated event listeners, and asynchronous operations continuing after a component is unmounted may occur.
+
+### What is the most important difference between useState and useRef?
+
+Updating `useState` usually triggers a component re-render, while modifying `useRef.current` does not trigger a re-render.
+
+### How do LAB 2 and LAB 4 manage timers differently?
+
+LAB 2 uses the `running` state to control `useEffect`. The Effect creates the timer, and Cleanup clears it.
+
+LAB 4 uses `useRef` to store the Timer ID and directly manages the timer in event handlers such as Start and Stop. `useEffect` is mainly responsible for Cleanup when the component unmounts.
+
+### Customizing
+
+Modified file: `src/components/Lab2_TimerControl.jsx`
+
+Modified code:
+
+```js
+const minutes = String(Math.floor(count / 60)).padStart(2, '0');
+const seconds = String(count % 60).padStart(2, '0');
+
+return (
+  <div className="count">{minutes}:{seconds}</div>
+);
+```
+
+Changed the timer display to the `mm:ss` format to show both minutes and seconds.
+
+## Deployment
+
+Vercel: https://week12-starter-project-blush.vercel.app/
+
+## Weekly Review
+
+### Three Things I Learned
+
+1. Functional state updates are very useful because they can prevent problems such as reading stale state values.
+2. How to use `useState` to manage component state and `useEffect` to manage side effects.
+3. How `useRef` works and how it can store mutable values without triggering unnecessary re-renders.
+
+### Difficulties and Solutions
+
+**Difficulty:** My incomplete understanding of Hooks often caused problems in my code.
+
+**Solution:** I reviewed the working principles of each Hook and learned how they are used in a program, which helped me write correct code.
+
+### AI Usage
+
+I used AI to help me understand concepts, working principles, and the original source code when I encountered difficulties. AI was also helpful during debugging.
